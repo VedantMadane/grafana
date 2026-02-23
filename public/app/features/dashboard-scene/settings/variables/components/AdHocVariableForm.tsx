@@ -63,7 +63,6 @@ export function AdHocVariableForm({
         <DataSourcePicker
           current={datasource}
           onChange={onDataSourceChange}
-          width={30}
           variables={true}
           dashboard={true}
           noDefault
