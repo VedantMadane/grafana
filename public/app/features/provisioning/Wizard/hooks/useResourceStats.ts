@@ -2,6 +2,7 @@ import { skipToken } from '@reduxjs/toolkit/query';
 import { useMemo } from 'react';
 
 import { t } from '@grafana/i18n';
+import { config } from '@grafana/runtime';
 import {
   GetRepositoryFilesApiResponse,
   GetResourceStatsApiResponse,
@@ -141,7 +142,13 @@ export function useResourceStats(
   // Calculate requiresMigration based on sync target and user selection
   // For instance sync: migrate if there are resources (checkbox is disabled and always true)
   // For folder sync: only migrate if user explicitly opts in via checkbox
-  const requiresMigration = syncTarget === 'instance' ? resourceCount > 0 : (migrateResources ?? false);
+  // Check provisioningExport feature flag - migration is disabled if flag is off
+  const isExportEnabled = config.featureToggles.provisioningExport ?? false;
+  const requiresMigration = isExportEnabled
+    ? syncTarget === 'instance'
+      ? resourceCount > 0
+      : (migrateResources ?? false)
+    : false;
   const shouldSkipSync = (resourceCount === 0 || syncTarget === 'folder') && fileCount === 0;
 
   // Format display strings
