@@ -806,6 +806,7 @@ func (b *APIBuilder) GetPostStartHooks() (map[string]genericapiserver.PostStartH
 				export.ExportAll,
 				stageIfPossible,
 				metrics,
+				b.features,
 			)
 
 			syncer := sync.NewSyncer(sync.Compare, sync.FullSync, sync.IncrementalSync, b.tracer, 10, metrics)
@@ -825,7 +826,7 @@ func (b *APIBuilder) GetPostStartHooks() (map[string]genericapiserver.PostStartH
 				exportWorker,
 				syncWorker,
 			)
-			migrationWorker := migrate.NewMigrationWorker(unifiedStorageMigrator)
+			migrationWorker := migrate.NewMigrationWorker(unifiedStorageMigrator, b.features)
 
 			deleteWorker := deletepkg.NewWorker(syncWorker, stageIfPossible, b.repositoryResources, metrics)
 			moveWorker := movepkg.NewWorker(syncWorker, stageIfPossible, b.repositoryResources, metrics)
