@@ -108,7 +108,7 @@ func ProvideService(
 		metrics:                newFoldersMetrics(r),
 		tracer:                 tracer,
 		publicDashboardService: publicDashboardService,
-		maxNestedFolderDepth:   cfg.Folder.MaxNestedFolderDepth,
+		maxNestedFolderDepth:   cfg.MaxNestedFolderDepth,
 	}
 	srv.DBMigration(db)
 

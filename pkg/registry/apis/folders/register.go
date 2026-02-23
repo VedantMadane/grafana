@@ -90,7 +90,7 @@ func RegisterAPIService(cfg *setting.Cfg,
 		permissionsOnCreate:  cfg.RBAC.PermissionsOnCreation("folder"),
 		searcher:             unified,
 		permissionStore:      reconcilers.NewZanzanaPermissionStore(zanzanaClient),
-		maxNestedFolderDepth: cfg.Folder.MaxNestedFolderDepth,
+		maxNestedFolderDepth: cfg.MaxNestedFolderDepth,
 	}
 	apiregistration.RegisterAPI(builder)
 	return builder

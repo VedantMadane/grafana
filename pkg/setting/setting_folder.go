@@ -5,23 +5,23 @@ import (
 )
 
 const maxNestedFolderDepth = 7
+const defaultMaxNestedFolderDepth = 4
 
-type FolderSettings struct {
-	// MaxNestedFolderDepth is the configured maximum nesting depth for folders.
-	// Must be between 1 and maxNestedFolderDepth (7).
-	MaxNestedFolderDepth int
-}
+func maxDeptFolderSettings(iniFile *ini.File) int {
 
-func readFolderSettings(iniFile *ini.File) FolderSettings {
-	s := FolderSettings{}
+	if iniFile == nil {
+		return defaultMaxNestedFolderDepth
+	}
 
 	folderSection := iniFile.Section("folder")
-	s.MaxNestedFolderDepth = folderSection.Key("max_nested_folder_depth").MustInt(4)
-	if s.MaxNestedFolderDepth > maxNestedFolderDepth {
-		s.MaxNestedFolderDepth = maxNestedFolderDepth
+	cfgMaxNestedFolderDepth := folderSection.Key("max_nested_folder_depth").MustInt(defaultMaxNestedFolderDepth)
+	if cfgMaxNestedFolderDepth > maxNestedFolderDepth {
+		cfgMaxNestedFolderDepth = maxNestedFolderDepth
 	}
-	if s.MaxNestedFolderDepth < 1 {
-		s.MaxNestedFolderDepth = 1
+
+	if cfgMaxNestedFolderDepth < maxNestedFolderDepth {
+		cfgMaxNestedFolderDepth = defaultMaxNestedFolderDepth
 	}
-	return s
+
+	return cfgMaxNestedFolderDepth
 }
