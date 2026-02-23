@@ -41,7 +41,6 @@ type UnifiedMigrator interface {
 
 // unifiedMigration handles the migration of legacy resources to unified storage
 type unifiedMigration struct {
-	tableLocker    MigrationTableLocker
 	streamProvider streamProvider
 	client         resource.SearchClient
 	log            log.Logger
@@ -74,14 +73,17 @@ func (r *resourceClientStreamProvider) createStream(ctx context.Context, opts Mi
 	return r.client.BulkProcess(ctx)
 }
 
+// ProvideMigrationTableLocker creates a MigrationTableLocker backed by the legacy database.
+func ProvideMigrationTableLocker(sql legacysql.LegacyDatabaseProvider) MigrationTableLocker {
+	return &legacyTableLocker{sql: sql}
+}
+
 // This can migrate Folders, Dashboards, LibraryPanels and Playlists
 func ProvideUnifiedMigrator(
-	sql legacysql.LegacyDatabaseProvider,
 	client resource.ResourceClient,
 	registry *MigrationRegistry,
 ) UnifiedMigrator {
 	return newUnifiedMigrator(
-		&legacyTableLocker{sql: sql},
 		&resourceClientStreamProvider{client: client},
 		client,
 		log.New("storage.unified.migrator"),
@@ -90,14 +92,12 @@ func ProvideUnifiedMigrator(
 }
 
 func newUnifiedMigrator(
-	tableLocker MigrationTableLocker,
 	streamProvider streamProvider,
 	client resource.SearchClient,
 	log log.Logger,
 	registry *MigrationRegistry,
 ) UnifiedMigrator {
 	return &unifiedMigration{
-		tableLocker:    tableLocker,
 		streamProvider: streamProvider,
 		client:         client,
 		log:            log,
@@ -117,17 +117,6 @@ func (m *unifiedMigration) Migrate(ctx context.Context, opts MigrateOptions) (*r
 	if len(opts.Resources) < 1 {
 		return nil, fmt.Errorf("missing resource selector")
 	}
-
-	lockTables := m.lockTablesForResources(opts.Resources)
-	unlockTables, err := m.tableLocker.LockMigrationTables(ctx, lockTables)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		if err := unlockTables(ctx); err != nil {
-			m.log.Error("error unlocking legacy tables", "error", err, "namespace", opts.Namespace)
-		}
-	}()
 
 	stream, err := m.streamProvider.createStream(ctx, opts, m.registry)
 	if err != nil {
@@ -254,11 +243,11 @@ func (m *unifiedMigration) rebuildIndexes(ctx context.Context, opts RebuildIndex
 	return nil
 }
 
-func (m *unifiedMigration) lockTablesForResources(resources []schema.GroupResource) []string {
+func lockTablesForResources(resources []schema.GroupResource, registry *MigrationRegistry) []string {
 	tables := make([]string, 0, len(resources))
 	seen := make(map[string]struct{})
 	for _, res := range resources {
-		for _, table := range m.registry.GetLockTables(res) {
+		for _, table := range registry.GetLockTables(res) {
 			if _, ok := seen[table]; ok {
 				continue
 			}

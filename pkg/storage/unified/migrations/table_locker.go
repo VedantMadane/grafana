@@ -42,7 +42,16 @@ func (l *legacyTableLocker) LockMigrationTables(ctx context.Context, tables []st
 			continue
 		}
 		seen[table] = struct{}{}
-		quotedTables = append(quotedTables, sqlHelper.DB.Quote(sqlHelper.Table(table)))
+		fullName := sqlHelper.Table(table)
+		exists, err := sqlHelper.DB.GetEngine().IsTableExist(fullName)
+		if err != nil {
+			return nil, fmt.Errorf("failed to check if table %q exists: %w", fullName, err)
+		}
+		if !exists {
+			tableLockerLog.Info("Skipping lock for non-existent table", "table", fullName)
+			continue
+		}
+		quotedTables = append(quotedTables, sqlHelper.DB.Quote(fullName))
 	}
 	if len(quotedTables) == 0 {
 		return func(context.Context) error { return nil }, nil

@@ -38,6 +38,10 @@ func (tc *foldersAndDashboardsTestCase) FeatureToggles() []string {
 	return nil
 }
 
+func (tc *foldersAndDashboardsTestCase) RenameTables() []string {
+	return []string{"dashboard", "dashboard_version", "dashboard_provisioning"}
+}
+
 func (tc *foldersAndDashboardsTestCase) Resources() []schema.GroupVersionResource {
 	return []schema.GroupVersionResource{
 		{

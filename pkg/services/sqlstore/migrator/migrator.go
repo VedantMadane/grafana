@@ -185,6 +185,11 @@ func (mg *Migrator) GetMigrationLog() (map[string]MigrationLog, error) {
 	return logMap, nil
 }
 
+// LogTableName returns the name of the migration log table.
+func (mg *Migrator) LogTableName() string {
+	return mg.tableName
+}
+
 func (mg *Migrator) RemoveMigrationLogs(migrationsIDs ...string) {
 	for _, id := range migrationsIDs {
 		delete(mg.logMap, id)

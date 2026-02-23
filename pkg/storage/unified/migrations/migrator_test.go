@@ -288,6 +288,9 @@ func runMigrationTestSuite(t *testing.T, testCases []testcases.ResourceMigratorT
 
 		t.Logf("Verifying key_path is populated in resource_history after bulkimport")
 		verifyKeyPathPopulated(t, helper)
+
+		t.Logf("Verifying legacy tables were renamed")
+		verifyTablesRenamed(t, helper, testCases)
 	})
 }
 
@@ -371,6 +374,29 @@ func verifyKeyPathPopulated(t *testing.T, helper *apis.K8sTestHelper) {
 	t.Logf("Verified %d rows in resource_history have populated key_path", populatedKeyPathCount)
 	require.Greater(t, populatedKeyPathCount, 0, "expected at least one row in resource_history with populated key_path")
 }
+
+// verifyTablesRenamed checks that legacy tables were renamed to _legacy after migration.
+func verifyTablesRenamed(t *testing.T, helper *apis.K8sTestHelper, testCases []testcases.ResourceMigratorTestCase) {
+	t.Helper()
+	engine := helper.GetEnv().SQLStore.GetEngine()
+
+	for _, tc := range testCases {
+		for _, table := range tc.RenameTables() {
+			legacyName := table + "_legacy"
+
+			exists, err := engine.IsTableExist(table)
+			require.NoError(t, err)
+			require.False(t, exists, "original table %q should no longer exist after migration", table)
+
+			exists, err = engine.IsTableExist(legacyName)
+			require.NoError(t, err)
+			require.True(t, exists, "renamed table %q should exist after migration", legacyName)
+
+			t.Logf("Verified table %q was renamed to %q", table, legacyName)
+		}
+	}
+}
+
 func TestUnifiedMigration_RebuildIndexes(t *testing.T) {
 	tests := []struct {
 		name         string
@@ -429,7 +455,6 @@ func TestUnifiedMigration_RebuildIndexes(t *testing.T) {
 			registry.Register(playlist.PlaylistMigration(playlistmigrator.ProvidePlaylistMigrator(nil)))
 			registry.Register(shorturl.ShortURLMigration(shorturlmigrator.ProvideShortURLMigrator(nil)))
 			migrator := migrations.ProvideUnifiedMigrator(
-				nil,
 				mockClient,
 				registry,
 			)
@@ -486,7 +511,6 @@ func TestUnifiedMigration_RebuildIndexes_RetrySuccess(t *testing.T) {
 	registry.Register(playlist.PlaylistMigration(playlistmigrator.ProvidePlaylistMigrator(nil)))
 	registry.Register(shorturl.ShortURLMigration(shorturlmigrator.ProvideShortURLMigrator(nil)))
 	migrator := migrations.ProvideUnifiedMigrator(
-		nil,
 		mockClient,
 		registry,
 	)
@@ -675,7 +699,6 @@ func TestUnifiedMigration_RebuildIndexes_UsingDistributor(t *testing.T) {
 			registry.Register(playlist.PlaylistMigration(playlistmigrator.ProvidePlaylistMigrator(nil)))
 			registry.Register(shorturl.ShortURLMigration(shorturlmigrator.ProvideShortURLMigrator(nil)))
 			migrator := migrations.ProvideUnifiedMigrator(
-				nil,
 				mockClient,
 				registry,
 			)
@@ -748,7 +771,6 @@ func TestUnifiedMigration_RebuildIndexes_UsingDistributor_RetrySuccess(t *testin
 	registry.Register(playlist.PlaylistMigration(playlistmigrator.ProvidePlaylistMigrator(nil)))
 	registry.Register(shorturl.ShortURLMigration(shorturlmigrator.ProvideShortURLMigrator(nil)))
 	migrator := migrations.ProvideUnifiedMigrator(
-		nil,
 		mockClient,
 		registry,
 	)
