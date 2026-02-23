@@ -80,7 +80,7 @@ func TestDashboardsWithVisibleAnnotations(t *testing.T) {
 		features:                  featuremgmt.WithFeatures(),
 		dashSvc:                   dashSvc,
 		searchDashboardsPageLimit: 100,
-		absoluteMaxDepth:          7,
+		maxDepth:                  7,
 	}
 
 	// First call without DashboardUID

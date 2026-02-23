@@ -31,11 +31,11 @@ import (
 const tracePrefix = "folder.unifiedstore."
 
 type FolderUnifiedStoreImpl struct {
-	log              log.Logger
-	k8sclient        client.K8sHandler
-	userService      user.Service
-	tracer           trace.Tracer
-	absoluteMaxDepth int
+	log         log.Logger
+	k8sclient   client.K8sHandler
+	userService user.Service
+	tracer      trace.Tracer
+	maxDepth    int
 }
 
 // sqlStore implements the store interface.
@@ -43,11 +43,11 @@ var _ folder.Store = (*FolderUnifiedStoreImpl)(nil)
 
 func ProvideUnifiedStore(k8sHandler client.K8sHandler, userService user.Service, tracer trace.Tracer, cfg *setting.Cfg) *FolderUnifiedStoreImpl {
 	return &FolderUnifiedStoreImpl{
-		k8sclient:        k8sHandler,
-		log:              log.New("folder-store"),
-		userService:      userService,
-		tracer:           tracer,
-		absoluteMaxDepth: cfg.AbsoluteMaxNestedFolderDepth,
+		k8sclient:   k8sHandler,
+		log:         log.New("folder-store"),
+		userService: userService,
+		tracer:      tracer,
+		maxDepth:    cfg.MaxNestedFolderDepth,
 	}
 }
 
@@ -294,7 +294,7 @@ func (ss *FolderUnifiedStoreImpl) GetHeight(ctx context.Context, foldrUID string
 
 	height := -1
 	queue := []string{foldrUID}
-	for len(queue) > 0 && height <= ss.absoluteMaxDepth {
+	for len(queue) > 0 && height <= ss.maxDepth {
 		length := len(queue)
 		height++
 		for i := 0; i < length; i++ {
@@ -312,8 +312,8 @@ func (ss *FolderUnifiedStoreImpl) GetHeight(ctx context.Context, foldrUID string
 			}
 		}
 	}
-	if height > ss.absoluteMaxDepth {
-		ss.log.Warn("folder height exceeds the maximum allowed depth, You might have a circular reference", "uid", foldrUID, "orgId", orgID, "maxDepth", ss.absoluteMaxDepth)
+	if height > ss.maxDepth {
+		ss.log.Warn("folder height exceeds the maximum allowed depth, You might have a circular reference", "uid", foldrUID, "orgId", orgID, "maxDepth", ss.maxDepth)
 	}
 	return height, nil
 }
