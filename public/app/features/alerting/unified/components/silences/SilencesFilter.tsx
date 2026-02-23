@@ -2,7 +2,7 @@ import { css } from '@emotion/css';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { GrafanaTheme2 } from '@grafana/data';
-import { Trans } from '@grafana/i18n';
+import { Trans, t } from '@grafana/i18n';
 import { AdHocFiltersVariable, EmbeddedScene, SceneFlexLayout, SceneVariableSet } from '@grafana/scenes';
 import { Button, Stack, useStyles2 } from '@grafana/ui';
 import { useQueryParams } from 'app/core/hooks/useQueryParams';
@@ -32,7 +32,7 @@ export function SilencesFilter({ silences }: SilencesFilterProps) {
       value: m.value,
     }));
 
-    return new AdHocFiltersVariable({
+    const variable = new AdHocFiltersVariable({
       name: 'silenceLabelsFilter',
       allowCustomValue: true,
       layout: 'combobox',
@@ -67,6 +67,22 @@ export function SilencesFilter({ silences }: SilencesFilterProps) {
         });
       },
     });
+
+    // Silence matchers only support =, !=, =~, !~ — override the default
+    // operator list which includes comparison operators like < and >
+    const SILENCE_MATCHER_OPERATORS = [
+      { label: '=', value: '=', description: t('alerting.silences.operator.equals', 'Equals') },
+      { label: '!=', value: '!=', description: t('alerting.silences.operator.not-equal', 'Not equal') },
+      { label: '=~', value: '=~', description: t('alerting.silences.operator.matches-regex', 'Matches regex') },
+      {
+        label: '!~',
+        value: '!~',
+        description: t('alerting.silences.operator.not-matches-regex', 'Does not match regex'),
+      },
+    ];
+    variable._getOperators = () => SILENCE_MATCHER_OPERATORS;
+
+    return variable;
   });
 
   const scene = useMemo(
