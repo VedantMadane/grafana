@@ -570,6 +570,9 @@ func getDashboardProperties(obj runtime.Object) (string, string, error) {
 	case *dashv2beta1.Dashboard:
 		title = d.Spec.Title
 		refresh = d.Spec.TimeSettings.AutoRefresh
+	case *dashv2beta2.Dashboard:
+		title = d.Spec.Title
+		refresh = d.Spec.TimeSettings.AutoRefresh
 	default:
 		return "", "", fmt.Errorf("unsupported dashboard version: %T", obj)
 	}
@@ -589,6 +592,8 @@ func validateDashboardTags(obj runtime.Object) error {
 	case *dashv2alpha1.Dashboard:
 		tags = d.Spec.Tags
 	case *dashv2beta1.Dashboard:
+		tags = d.Spec.Tags
+	case *dashv2beta2.Dashboard:
 		tags = d.Spec.Tags
 	default:
 		return fmt.Errorf("unsupported dashboard version: %T", obj)
@@ -959,7 +964,7 @@ func (b *DashboardsAPIBuilder) GetOpenAPIDefinitions() common.GetOpenAPIDefiniti
 			}
 		}
 
-		// Fix legacyOptions schema for v2alpha1 and v2beta1 to allow any value type
+		// Fix legacyOptions schema for v2alpha1, v2beta1, and v2beta2 to allow any value type
 		// The generated schema incorrectly restricts values to objects, but map[string]interface{} can hold any type
 		// This fix must be applied here so structured-merge-diff uses the correct schema
 		// For some reason this issue occurs with both the kubernetes-generated openAPI sourced from go, _and_ the OpenAPI from the AppManifest
@@ -967,6 +972,7 @@ func (b *DashboardsAPIBuilder) GetOpenAPIDefinitions() common.GetOpenAPIDefiniti
 		for _, defKey := range []string{
 			"github.com/grafana/grafana/apps/dashboard/pkg/apis/dashboard/v2alpha1.DashboardAnnotationQuerySpec",
 			"github.com/grafana/grafana/apps/dashboard/pkg/apis/dashboard/v2beta1.DashboardAnnotationQuerySpec",
+			"github.com/grafana/grafana/apps/dashboard/pkg/apis/dashboard/v2beta2.DashboardAnnotationQuerySpec",
 		} {
 			if def, ok := defs[defKey]; ok {
 				if legacyOptions, ok := def.Schema.Properties["legacyOptions"]; ok {
